@@ -1,0 +1,79 @@
+<UserControl
+    x:Class="TypoChecker.UI.Views.MainView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:TypoChecker.UI.ViewModels"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:MainViewModel"
+    mc:Ignorable="d">
+
+
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBox
+            AcceptsReturn="True"
+            Text="{Binding Input}"
+            TextWrapping="Wrap" />
+        <ProgressBar
+            Grid.Row="2"
+            Height="24"
+            Maximum="1"
+            Minimum="0"
+            ProgressTextFormat="{}{1:0.0}%"
+            ShowProgressText="True"
+            Value="{Binding Progress}" />
+        <StackPanel
+            Grid.Row="4"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="8">
+            <StackPanel.Styles>
+                <Style Selector="Button">
+                    <Setter Property="Width" Value="128" />
+                    <Setter Property="Height" Value="32" />
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </Style>
+            </StackPanel.Styles>
+            <Button
+                Command="{Binding CheckCommand}"
+                Content="检查错别字" />
+            <Button
+                Command="{Binding CancelCheckCommand}"
+                Content="取消" />
+        </StackPanel>
+        <DataGrid
+            Grid.Row="6"
+            AutoGenerateColumns="False"
+            CanUserReorderColumns="True"
+            CanUserResizeColumns="True"
+            CanUserSortColumns="False"
+            IsReadOnly="True"
+            ItemsSource="{Binding Results}">
+            <DataGrid.Columns>
+                <DataGridTextColumn
+                    Binding="{Binding Sentense}"
+                    Header="原文" />
+                <DataGridTextColumn
+                    Binding="{Binding WrongWords}"
+                    Header="错误内容" />
+                <DataGridTextColumn
+                    Binding="{Binding CorrectWords}"
+                    Header="改正后内容" />
+                <DataGridTextColumn
+                    Binding="{Binding Message}"
+                    Header="信息" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
