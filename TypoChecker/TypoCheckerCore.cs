@@ -13,6 +13,7 @@ public class TypoCheckerCore
                                                          IProgress<double> progress,
                                                          [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
         var segments = SplitText(text, config.MinSegmentLength);
         for (int index = 0; index < segments.Count; index++)
         {
@@ -107,7 +108,7 @@ public class TypoCheckerCore
     {
         string[] parts = text.Trim().Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Length != 5)
+        if (parts.Length != 4)
         {
             throw new FormatException("格式错误：" + text);
         }
@@ -117,8 +118,7 @@ public class TypoCheckerCore
             Sentense = parts[0],
             WrongWords = parts[1],
             CorrectWords = parts[2],
-            Possibility = parts[3],
-            Message = parts[4]
+            Message = parts[3]
         };
     }
 

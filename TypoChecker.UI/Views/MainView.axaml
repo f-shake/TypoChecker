@@ -33,7 +33,8 @@
             <TextBox
                 AcceptsReturn="True"
                 Text="{Binding Input}"
-                TextWrapping="Wrap" />
+                TextWrapping="Wrap"
+                Watermark="请输入需要检查错别字的文段" />
             <ProgressBar
                 Grid.Row="2"
                 Height="24"
@@ -77,19 +78,65 @@
                     IsReadOnly="True"
                     ItemsSource="{Binding Results}">
                     <DataGrid.Columns>
+                        <DataGridTemplateColumn
+                            Width="3*"
+                            Header="原文">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Text="{Binding Sentense}" />
+                                        <HyperlinkButton
+                                            Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
+                                            CommandParameter="{Binding Sentense}"
+                                            Content="复制" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn
+                            Width="*"
+                            Header="原词">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Text="{Binding WrongWords}" />
+                                        <HyperlinkButton
+                                            Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
+                                            CommandParameter="{Binding WrongWords}"
+                                            Content="复制" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn
+                            Width="*"
+                            Header="修正后">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Text="{Binding CorrectWords}" />
+                                        <HyperlinkButton
+                                            Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
+                                            CommandParameter="{Binding CorrectWords}"
+                                            Content="复制" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn
-                            Width="240"
-                            Binding="{Binding Sentense}"
-                            Header="原文" />
-                        <DataGridTextColumn
-                            Width="120"
-                            Binding="{Binding WrongWords}"
-                            Header="错误内容" />
-                        <DataGridTextColumn
-                            Width="120"
-                            Binding="{Binding CorrectWords}"
-                            Header="改正后内容" />
-                        <DataGridTextColumn
+                            Width="*"
                             Binding="{Binding Message}"
                             Header="信息" />
                     </DataGrid.Columns>
@@ -97,18 +144,30 @@
 
             </TabItem>
             <TabItem Header="其他输出">
-                <ListBox
-                    DisplayMemberBinding="{Binding Message}"
-                    ItemsSource="{Binding OtherOutputs}" />
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding OtherOutputs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <SelectableTextBlock
+                                    Text="{Binding Message}"
+                                    TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="提示词">
-                <ListBox ItemsSource="{Binding Prompts}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <SelectableTextBlock Text="{Binding Prompt}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Prompts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <SelectableTextBlock
+                                    Text="{Binding Prompt}"
+                                    TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

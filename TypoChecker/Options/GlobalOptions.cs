@@ -1,4 +1,6 @@
-﻿using System.Text.Encodings.Web;
+﻿//#define USE_DEFAULT
+
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
 
@@ -12,26 +14,41 @@ public class GlobalOptions
 
     private static readonly string ConfigPath = "config.json";
 
-    public string Prompt { get; set; } = $"帮我检查错别字和标点错误，只检查这两项，不要检查其他内容。" +
-        $"如果存在任何错别字，每个错别字/词输出一行，输出一张表格，按以下格式：" +
-        $"第一列为所在语段，第二列为原词（字/标点），第三列为修改后的字（词/标点），第四列为错误的可能性，第五列为相关信息，比如为什么要修改。" +
-        $"不要输出表头。" +
-        $"第一列部分，只需要前后10个字左右。" +
-        $"例如，输入“今天我很高心，妈妈做了好吃的”，输出“|今天我很高心|心|兴|95%|错别字|”。" +
-        $"不要对语句进行优化，只需要提供明显错误的地方，例如，不要提出口语化、简化等建议。" +
-        $"如果没有错别字，就不要输出表格，直接输出“无错别字”。" +
-        $"以下是需要检查的内容：";
+    public string Prompt { get; set; } = """
+        请你帮我检查文段中的错误。需要检查的内容包括：1.错别字（包括中文和英文等）；2.标点符号。
+
+        输出要求：
+        1. 每个错误一行，以Markdown表格的形式，但不加表头，格式：
+        |错误位置前后10-15字|原词|修正词|说明|
+        2. 不需要对文本进行优化，仅指出明显错误的地方
+        3. 以下情况豁免：网络用语、标注方言、代码/专有名词
+
+        示例：
+        输入："新iphone很贵，但 销量很好，她笑的很开心，因为她是销售经历。"
+        输出：
+        |新iphone很贵|iphone|iPhone|品牌大小写错误|
+        |但 销量很好|（空格）|（无空格）|中文之间不该有空格|
+        |她笑的很开心|的|得|动词在前，应使用“得”|
+        |因为她是销售经历|经历|经理|错别字|
+        
+        有错误时，只输出上文要求的错误内容，不输出其他内容；
+        无错误时输出："无错误"（不包括引号）
+
+        以下是待检查内容：
+        """;
 
     public string EmptyOutput = "无错别字";
 
 
     public static GlobalOptions LoadOrCreate()
     {
+#if !DEBUG || !USE_DEFAULT
         if (File.Exists(ConfigPath))
         {
             string json = File.ReadAllText(ConfigPath);
             return JsonSerializer.Deserialize(json, TypeCheckerJsonContext.Instance.GlobalOptions) ?? new GlobalOptions();
         }
+#endif
         return new GlobalOptions();
     }
 

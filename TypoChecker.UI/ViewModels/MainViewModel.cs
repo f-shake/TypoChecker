@@ -42,10 +42,22 @@ public partial class MainViewModel : ViewModelBase
     }
 
     public ICommand CancelCheckCommand { get; }
+
     public GlobalOptions Options { get; }
+
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task CheckAsync(CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(Input))
+        {
+            await WeakReferenceMessenger.Default.Send(new CommonDialogMessage
+            {
+                Type = CommonDialogMessage.CommonDialogType.Error,
+                Title = "错误",
+                Message = "输入内容为空"
+            }).Task;
+            return;
+        }
         Results = new ObservableCollection<TypoItem>();
         Prompts = new ObservableCollection<PromptItem>();
         OtherOutputs = new ObservableCollection<ParseFailedItem>();
@@ -86,5 +98,11 @@ public partial class MainViewModel : ViewModelBase
         {
             Progress = 1d;
         }
+    }
+
+    [RelayCommand]
+    private Task CopyValueAsync(string value)
+    {
+        return WeakReferenceMessenger.Default.Send(new GetClipboardMessage()).Clipboard.SetTextAsync(value);
     }
 }
