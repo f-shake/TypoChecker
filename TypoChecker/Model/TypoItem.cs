@@ -1,6 +1,5 @@
 ﻿namespace TypoChecker.Models;
-
-public class ResultItem
+public class TypoItem : ICheckItem
 {
     public string Sentense { get; set; }
     public string WrongWords { get; set; }

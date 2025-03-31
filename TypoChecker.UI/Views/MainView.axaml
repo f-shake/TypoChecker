@@ -10,6 +10,11 @@
     x:DataType="vm:MainViewModel"
     mc:Ignorable="d">
 
+    <UserControl.Styles>
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+    </UserControl.Styles>
 
     <Grid Margin="8">
         <Grid.RowDefinitions>
@@ -17,7 +22,7 @@
             <RowDefinition Height="8" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid >
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="8" />
@@ -62,28 +67,49 @@
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             Background="Transparent" />
-        <DataGrid
-            Grid.Row="2"
-            AutoGenerateColumns="False"
-            CanUserReorderColumns="True"
-            CanUserResizeColumns="True"
-            CanUserSortColumns="False"
-            IsReadOnly="True"
-            ItemsSource="{Binding Results}">
-            <DataGrid.Columns>
-                <DataGridTextColumn
-                    Binding="{Binding Sentense}"
-                    Header="原文" />
-                <DataGridTextColumn
-                    Binding="{Binding WrongWords}"
-                    Header="错误内容" />
-                <DataGridTextColumn
-                    Binding="{Binding CorrectWords}"
-                    Header="改正后内容" />
-                <DataGridTextColumn
-                    Binding="{Binding Message}"
-                    Header="信息" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <TabControl Grid.Row="2">
+            <TabItem Header="错误列表">
+                <DataGrid
+                    AutoGenerateColumns="False"
+                    CanUserReorderColumns="True"
+                    CanUserResizeColumns="True"
+                    CanUserSortColumns="False"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Results}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn
+                            Width="240"
+                            Binding="{Binding Sentense}"
+                            Header="原文" />
+                        <DataGridTextColumn
+                            Width="120"
+                            Binding="{Binding WrongWords}"
+                            Header="错误内容" />
+                        <DataGridTextColumn
+                            Width="120"
+                            Binding="{Binding CorrectWords}"
+                            Header="改正后内容" />
+                        <DataGridTextColumn
+                            Binding="{Binding Message}"
+                            Header="信息" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+            </TabItem>
+            <TabItem Header="其他输出">
+                <ListBox
+                    DisplayMemberBinding="{Binding Message}"
+                    ItemsSource="{Binding OtherOutputs}" />
+            </TabItem>
+            <TabItem Header="提示词">
+                <ListBox ItemsSource="{Binding Prompts}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding Prompt}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </TabItem>
+        </TabControl>
     </Grid>
 </UserControl>

@@ -20,10 +20,16 @@ public partial class MainViewModel : ViewModelBase
     private string input;
 
     [ObservableProperty]
-    private ObservableCollection<ResultItem> results = new ObservableCollection<ResultItem>();
+    private ObservableCollection<ParseFailedItem> otherOutputs = new ObservableCollection<ParseFailedItem>();
 
     [ObservableProperty]
     private double progress;
+
+    [ObservableProperty]
+    private ObservableCollection<PromptItem> prompts = new ObservableCollection<PromptItem>();
+
+    [ObservableProperty]
+    private ObservableCollection<TypoItem> results = new ObservableCollection<TypoItem>();
 
     public MainViewModel()
     {
@@ -35,22 +41,34 @@ public partial class MainViewModel : ViewModelBase
         CancelCheckCommand = CheckCommand.CreateCancelCommand();
     }
 
-    public GlobalOptions Options { get; }
-
     public ICommand CancelCheckCommand { get; }
-
-
+    public GlobalOptions Options { get; }
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task CheckAsync(CancellationToken cancellationToken)
     {
-        Results = new ObservableCollection<ResultItem>();
+        Results = new ObservableCollection<TypoItem>();
+        Prompts = new ObservableCollection<PromptItem>();
+        OtherOutputs = new ObservableCollection<ParseFailedItem>();
         try
         {
             TypoCheckerCore service = new TypoCheckerCore();
             var progress = new Progress<double>(p => Progress = p);
             await foreach (var item in service.CheckAsync(Input, Options, progress, cancellationToken))
             {
-                Results.Add(item);
+                switch (item)
+                {
+                    case TypoItem t:
+                        Results.Add(t);
+                        break;
+                    case ParseFailedItem f:
+                        OtherOutputs.Add(f);
+                        break;
+                    case PromptItem p:
+                        Prompts.Add(p);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         catch (OperationCanceledException) { }

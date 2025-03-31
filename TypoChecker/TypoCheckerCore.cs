@@ -4,10 +4,14 @@ using System.ClientModel;
 using TypoChecker.Options;
 using TypoChecker.Models;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 public class TypoCheckerCore
 {
-    public async IAsyncEnumerable<ResultItem> CheckAsync(string text, GlobalOptions config, IProgress<double> progress, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ICheckItem> CheckAsync(string text,
+                                                         GlobalOptions config,
+                                                         IProgress<double> progress,
+                                                         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var segments = SplitText(text, config.MinSegmentLength);
         for (int index = 0; index < segments.Count; index++)
@@ -18,6 +22,7 @@ public class TypoCheckerCore
             progress?.Report((double)(0 + index) / segments.Count);
 
             string prompt = config.Prompt + segment;
+            yield return new PromptItem(prompt);
             string result = config.SourceType switch
             {
                 SourceType.OpenAI => await CallOpenAI(prompt, config.OpenAiOptions),
@@ -42,7 +47,16 @@ public class TypoCheckerCore
                 {
                     continue;
                 }
-                yield return Parse(line);
+                ICheckItem c = null;
+                try
+                {
+                  c= Parse(line);
+                }
+                catch(FormatException ex)
+                {
+                    c = new ParseFailedItem(ex.Message);
+                }
+                yield return c;
             }
         }
     }
@@ -89,16 +103,16 @@ public class TypoCheckerCore
         return string.Join(Environment.NewLine, result.Value.Content.Select(p => p.Text));
     }
 
-    private ResultItem Parse(string text)
+    private TypoItem Parse(string text)
     {
         string[] parts = text.Trim().Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length != 5)
         {
-            return new ResultItem { Message = "格式错误：" + text };
+            throw new FormatException("格式错误：" + text);
         }
 
-        return new ResultItem
+        return new TypoItem
         {
             Sentense = parts[0],
             WrongWords = parts[1],
