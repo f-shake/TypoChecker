@@ -1,0 +1,60 @@
+<dialog:DialogHost
+    x:Class="TypoChecker.UI.Views.ConfigDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:FzLib.Avalonia.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialog="using:FzLib.Avalonia.Dialogs"
+    xmlns:g="using:GroupBox.Avalonia.Controls"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:TypoChecker.UI.ViewModels"
+    Title="配置"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    x:DataType="vm:ConfigDialogViewModel"
+    CloseButtonContent="取消"
+    CloseButtonEnable="True"
+    PrimaryButtonContent="保存"
+    PrimaryButtonEnable="True"
+    mc:Ignorable="d">
+    <StackPanel
+        Margin="8"
+        Orientation="Vertical"
+        Spacing="8">
+
+        <RadioButton
+            Content="使用OpenAI"
+            GroupName="a"
+            IsChecked="{Binding UseOpenAi}" />
+        <g:GroupBox IsEnabled="{Binding UseOpenAi}">
+            <c:StackFormItemGroup>
+                <c:FormItem Label="地址：">
+                    <TextBox Text="{Binding Options.OpenAiOptions.Url}" />
+                </c:FormItem>
+                <c:FormItem Label="Key：">
+                    <TextBox Text="{Binding Options.OpenAiOptions.Key}" />
+                </c:FormItem>
+                <c:FormItem Label="模型：">
+                    <TextBox Text="{Binding Options.OpenAiOptions.Model}" />
+                </c:FormItem>
+            </c:StackFormItemGroup>
+        </g:GroupBox>
+        <RadioButton
+            Content="使用Ollama"
+            GroupName="a"
+            IsChecked="{Binding UseOllama}" />
+        <g:GroupBox IsEnabled="{Binding UseOllama}">
+            <c:StackFormItemGroup>
+                <c:FormItem Label="地址：">
+                    <TextBox Text="{Binding Options.OllamaOptions.Url}" />
+                </c:FormItem>
+                <c:FormItem Label="模型：">
+                    <TextBox Text="{Binding Options.OllamaOptions.Model}" />
+                </c:FormItem>
+            </c:StackFormItemGroup>
+        </g:GroupBox>
+        <c:FormItem Label="最小分割字数：">
+            <TextBox Text="{Binding Options.MinSegmentLength}" />
+        </c:FormItem>
+    </StackPanel>
+</dialog:DialogHost>

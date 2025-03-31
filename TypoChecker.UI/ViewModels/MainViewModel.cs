@@ -11,9 +11,9 @@ using System.Windows.Input;
 using TypoChecker.Models;
 using TypoChecker.Options;
 using TypoChecker.UI.Messages;
+using TypoChecker.UI.Views;
 
 namespace TypoChecker.UI.ViewModels;
-
 public partial class MainViewModel : ViewModelBase
 {
     [ObservableProperty]
@@ -33,17 +33,17 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
-        Options = GlobalOptions.LoadOrCreate();
-        WeakReferenceMessenger.Default.Register(this, (object _, AppExitMessage m) =>
-        {
-            Options.Save();
-        });
+        // Options = GlobalOptions.LoadOrCreate();
+        // WeakReferenceMessenger.Default.Register(this, (object _, AppExitMessage m) =>
+        // {
+        //     Options.Save();
+        // });
         CancelCheckCommand = CheckCommand.CreateCancelCommand();
     }
 
     public ICommand CancelCheckCommand { get; }
 
-    public GlobalOptions Options { get; }
+    // public GlobalOptions Options { get; }
 
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task CheckAsync(CancellationToken cancellationToken)
@@ -65,7 +65,8 @@ public partial class MainViewModel : ViewModelBase
         {
             TypoCheckerCore service = new TypoCheckerCore();
             var progress = new Progress<double>(p => Progress = p);
-            await foreach (var item in service.CheckAsync(Input, Options, progress, cancellationToken))
+            var options = GlobalOptions.LoadOrCreate();
+            await foreach (var item in service.CheckAsync(Input, options, progress, cancellationToken))
             {
                 switch (item)
                 {
@@ -104,5 +105,12 @@ public partial class MainViewModel : ViewModelBase
     private Task CopyValueAsync(string value)
     {
         return WeakReferenceMessenger.Default.Send(new GetClipboardMessage()).Clipboard.SetTextAsync(value);
+    }
+
+    [RelayCommand]
+    private async Task SettingAsync()
+    {
+        var dialog = new ConfigDialog();
+        await WeakReferenceMessenger.Default.Send(new DialogHostMessage(dialog)).Task;
     }
 }

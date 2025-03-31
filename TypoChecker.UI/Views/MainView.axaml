@@ -16,20 +16,10 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid Margin="8">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="8" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="8" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <Grid
+        Margin="8"
+        RowDefinitions="*,8,*">
+        <Grid RowDefinitions="*,8,Auto,8,Auto">
             <TextBox
                 AcceptsReturn="True"
                 Text="{Binding Input}"
@@ -43,25 +33,28 @@
                 ProgressTextFormat="{}{1:0.0}%"
                 ShowProgressText="True"
                 Value="{Binding Progress}" />
-            <StackPanel
+            <Grid
                 Grid.Row="4"
-                HorizontalAlignment="Center"
-                Orientation="Horizontal"
-                Spacing="8">
-                <StackPanel.Styles>
+                ColumnDefinitions="Auto,*,Auto,8,Auto">
+                <Grid.Styles>
                     <Style Selector="Button">
                         <Setter Property="Width" Value="128" />
                         <Setter Property="Height" Value="32" />
                         <Setter Property="HorizontalContentAlignment" Value="Center" />
                     </Style>
-                </StackPanel.Styles>
+                </Grid.Styles>
                 <Button
+                    Command="{Binding SettingCommand}"
+                    Content="设置" />
+                <Button
+                    Grid.Column="2"
                     Command="{Binding CheckCommand}"
                     Content="检查错别字" />
                 <Button
+                    Grid.Column="4"
                     Command="{Binding CancelCheckCommand}"
                     Content="取消" />
-            </StackPanel>
+            </Grid>
         </Grid>
         <GridSplitter
             Grid.Row="1"

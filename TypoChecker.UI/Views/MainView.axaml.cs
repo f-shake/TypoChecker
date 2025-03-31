@@ -10,5 +10,6 @@ public partial class MainView : UserControl
         InitializeComponent();
         this.RegisterCommonDialogMessage();
         this.RegisterGetClipboardMessage();
+        this.RegisterDialogHostMessage();
     }
 }
