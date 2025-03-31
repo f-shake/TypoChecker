@@ -3,6 +3,7 @@ using OpenAI;
 using System.ClientModel;
 using TypoChecker.Options;
 using TypoChecker.Models;
+using System.Text;
 
 public class TypoCheckerCore
 {
@@ -92,7 +93,7 @@ public class TypoCheckerCore
     {
         string[] parts = text.Trim().Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Length != 4)
+        if (parts.Length != 5)
         {
             return new ResultItem { Message = "格式错误：" + text };
         }
@@ -102,38 +103,76 @@ public class TypoCheckerCore
             Sentense = parts[0],
             WrongWords = parts[1],
             CorrectWords = parts[2],
-            Possibility = parts[3]
+            Possibility = parts[3],
+            Message = parts[4]
         };
     }
 
     private List<string> SplitText(string text, int minSegmentLength)
     {
-        char[] delimiters = { '。', '？', '！', '\n', '\r' };
+        // 定义分隔符（保留原分隔符）
+        char[] delimiters = ['。', '？', '！', '\n', '\r'];
 
-        List<string> segments = text.Split(delimiters)
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim())
-            .Where(p => p != "")
-            .ToList();
+        // 使用StringBuilder提高性能
+        var finalSegments = new List<string>();
+        var currentSegment = new StringBuilder();
+        int lastDelimiterIndex = -1;
 
-        List<string> finalSegments = new();
-        string temp = "";
-
-        foreach (var seg in segments)
+        for (int i = 0; i < text.Length; i++)
         {
-            if (temp.Length + seg.Length < minSegmentLength)
+            char c = text[i];
+            currentSegment.Append(c);
+
+            // 检查是否是分隔符
+            if (delimiters.Contains(c))
             {
-                temp += seg;
+                // 如果是换行符，可能需要特殊处理
+                if (c == '\n' || c == '\r')
+                {
+                    // 处理Windows风格的换行(\r\n)
+                    if (c == '\r' && i + 1 < text.Length && text[i + 1] == '\n')
+                    {
+                        currentSegment.Append('\n');
+                        i++;
+                    }
+                }
+
+                string segment = currentSegment.ToString();
+
+                // 如果当前分段足够长，或者下一个字符是文本结束
+                if (segment.Length >= minSegmentLength || i == text.Length - 1)
+                {
+                    finalSegments.Add(segment);
+                    currentSegment.Clear();
+                    lastDelimiterIndex = -1;
+                }
+                else
+                {
+                    lastDelimiterIndex = currentSegment.Length - 1;
+                }
             }
-            else
+            // 检查是否达到最小长度但未找到分隔符
+            else if (currentSegment.Length >= minSegmentLength && lastDelimiterIndex >= 0)
             {
-                if (!string.IsNullOrEmpty(temp)) finalSegments.Add(temp);
-                temp = seg;
+                // 在最后一个分隔符处分割
+                string segment = currentSegment.ToString(0, lastDelimiterIndex + 1);
+                finalSegments.Add(segment);
+
+                // 保留分隔符后的内容
+                string remaining = currentSegment.ToString(lastDelimiterIndex + 1, currentSegment.Length - lastDelimiterIndex - 1);
+                currentSegment.Clear();
+                currentSegment.Append(remaining);
+                lastDelimiterIndex = -1;
             }
         }
 
-        if (!string.IsNullOrEmpty(temp)) finalSegments.Add(temp);
+        // 添加最后剩余的部分
+        if (currentSegment.Length > 0)
+        {
+            finalSegments.Add(currentSegment.ToString());
+        }
 
-        return finalSegments;
+        // 过滤空段落
+        return finalSegments.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
     }
 }
