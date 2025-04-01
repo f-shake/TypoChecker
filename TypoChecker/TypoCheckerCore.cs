@@ -1,11 +1,9 @@
-﻿using System.Text.Json;
-using OpenAI;
-using System.ClientModel;
-using TypoChecker.Options;
+﻿using TypoChecker.Options;
 using TypoChecker.Models;
 using System.Text;
 using System.Runtime.CompilerServices;
 
+namespace TypoChecker;
 public class TypoCheckerCore
 {
     public async IAsyncEnumerable<ICheckItem> CheckAsync(string text,
@@ -26,8 +24,8 @@ public class TypoCheckerCore
             yield return new PromptItem(prompt);
             string result = config.SourceType switch
             {
-                SourceType.OpenAI => await CallOpenAI(prompt, config.OpenAiOptions),
-                SourceType.Ollama => await CallOllamaApi(prompt, config.OllamaOptions),
+                SourceType.OpenAI => await LlmCaller.CallOpenAI(prompt, config.OpenAiOptions),
+                SourceType.Ollama => await LlmCaller.CallOllamaApi(prompt, config.OllamaOptions),
                 _ => throw new NotImplementedException()
             };
 
@@ -51,9 +49,9 @@ public class TypoCheckerCore
                 ICheckItem c = null;
                 try
                 {
-                  c= Parse(line);
+                    c = Parse(line);
                 }
-                catch(FormatException ex)
+                catch (FormatException ex)
                 {
                     c = new ParseFailedItem(ex.Message);
                 }
@@ -62,53 +60,11 @@ public class TypoCheckerCore
         }
     }
 
-    private async Task<string> CallOllamaApi(string prompt, OllamaOptions config)
-    {
-        using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(1000) };
-
-        var requestData = new OllamaRequestData { Model = config.Model, Prompt = prompt, Stream = false };
-
-        string jsonContent = JsonSerializer.Serialize(requestData, TypeCheckerJsonContext.Default.OllamaRequestData);
-
-        HttpContent content = new StringContent(jsonContent);
-        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-
-        HttpResponseMessage response = await client.PostAsync(config.Url, content);
-        response.EnsureSuccessStatusCode();
-
-        string jsonResponse = await response.Content.ReadAsStringAsync();
-        var responseObject = JsonSerializer.Deserialize(jsonResponse, (System.Text.Json.Serialization.Metadata.JsonTypeInfo<OllamaResponseData>)TypeCheckerJsonContext.Default.OllamaResponseData);
-
-        return responseObject?.Response ?? "";
-    }
-
-    private async Task<string> CallOpenAI(string text, OpenAiOptions config)
-    {
-        if (string.IsNullOrEmpty(config.Key))
-        {
-            throw new FileNotFoundException($"Key为空");
-        }
-
-        if (string.IsNullOrEmpty(config.Model))
-        {
-            throw new FileNotFoundException($"没有指定模型");
-        }
-
-        OpenAIClient client = new OpenAIClient(
-            new ApiKeyCredential(config.Key),
-            new OpenAIClientOptions
-            {
-                Endpoint = new Uri(config.Url),
-            });
-        var result = await client.GetChatClient(config.Model).CompleteChatAsync(text);
-        return string.Join(Environment.NewLine, result.Value.Content.Select(p => p.Text));
-    }
-
     private TypoItem Parse(string text)
     {
         string[] parts = text.Trim().Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
-        if (parts.Length != 4)
+        if (parts.Length != 5)
         {
             throw new FormatException("格式错误：" + text);
         }
@@ -118,7 +74,8 @@ public class TypoCheckerCore
             Sentense = parts[0],
             WrongWords = parts[1],
             CorrectWords = parts[2],
-            Message = parts[3]
+            CorrectSentense = parts[3],
+            Message = parts[4]
         };
     }
 
@@ -188,5 +145,121 @@ public class TypoCheckerCore
 
         // 过滤空段落
         return finalSegments.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+    }
+
+    public static List<TypoSegment> SegmentTypos(string rawText, IList<TypoItem> typos)
+    {
+        //AI的回复中，正确修正后语段，如果一句话中存在多个错误，只会在最后一个修正时全部修正正确。
+        var temp = typos;
+        typos = new List<TypoItem>();
+        foreach (var t in temp)
+        {
+            if(typos.Count==0 || typos[^1].Sentense!=t.Sentense)
+            {
+                typos.Add(t);
+            }
+        }
+
+        var segments = new List<TypoSegment>();
+
+        if (string.IsNullOrEmpty(rawText))
+        {
+            return segments;
+        }
+
+        if (typos == null || typos.Count == 0)
+        {
+            segments.Add(new TypoSegment
+            {
+                Text = rawText,
+                HasTypo = false,
+                Typo = null
+            });
+            return segments;
+        }
+
+        // 先按句子长度降序排序，优先处理更长的匹配项
+        var sortedTypos = typos
+            .Where(t => !string.IsNullOrEmpty(t.Sentense))
+            .OrderByDescending(t => t.Sentense.Length)
+            .ToList();
+
+        // 记录每个字符属于哪个错误句子(null表示不属于任何错误)
+        TypoItem[] charTypoMap = new TypoItem[rawText.Length];
+
+        // 遍历所有错误句子
+        foreach (var typo in sortedTypos)
+        {
+            int index = 0;
+            while (index < rawText.Length)
+            {
+                int foundIndex = rawText.IndexOf(typo.Sentense, index, StringComparison.Ordinal);
+                if (foundIndex == -1)
+                    break;
+
+                // 检查这个匹配是否完全未被标记
+                bool canMark = true;
+                for (int i = foundIndex; i < foundIndex + typo.Sentense.Length; i++)
+                {
+                    if (charTypoMap[i] != null)
+                    {
+                        canMark = false;
+                        break;
+                    }
+                }
+
+                if (canMark)
+                {
+                    // 标记这部分为当前错误
+                    for (int i = foundIndex; i < foundIndex + typo.Sentense.Length; i++)
+                    {
+                        charTypoMap[i] = typo;
+                    }
+                }
+
+                index = foundIndex + typo.Sentense.Length;
+            }
+        }
+
+        // 现在根据标记构建分段
+        int currentPos = 0;
+        while (currentPos < rawText.Length)
+        {
+            // 处理非错误文本
+            if (charTypoMap[currentPos] == null)
+            {
+                int start = currentPos;
+                while (currentPos < rawText.Length && charTypoMap[currentPos] == null)
+                {
+                    currentPos++;
+                }
+                segments.Add(new TypoSegment
+                {
+                    Text = rawText.Substring(start, currentPos - start),
+                    HasTypo = false,
+                    Typo = null
+                });
+                continue;
+            }
+
+            // 处理错误文本
+            TypoItem currentTypo = charTypoMap[currentPos];
+            int typoStart = currentPos;
+
+            // 找到连续的相同错误类型的文本
+            while (currentPos < rawText.Length && charTypoMap[currentPos] == currentTypo)
+            {
+                currentPos++;
+            }
+
+            segments.Add(new TypoSegment
+            {
+                Text = rawText.Substring(typoStart, currentPos - typoStart),
+                HasTypo = true,
+                Typo = currentTypo
+            });
+        }
+
+        return segments;
     }
 }

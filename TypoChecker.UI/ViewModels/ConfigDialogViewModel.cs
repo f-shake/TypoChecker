@@ -5,6 +5,15 @@ namespace TypoChecker.UI.ViewModels;
 
 public partial class ConfigDialogViewModel : ViewModelBase
 {
+    [ObservableProperty]
+    private GlobalOptions options = GlobalOptions.LoadOrCreate();
+
+    [ObservableProperty]
+    private bool useOllama;
+
+    [ObservableProperty]
+    private bool useOpenAi;
+
     public ConfigDialogViewModel()
     {
         if (Options.SourceType == SourceType.OpenAI)
@@ -16,27 +25,9 @@ public partial class ConfigDialogViewModel : ViewModelBase
             UseOllama = true;
         }
     }
-    public double[] Ticks { get; } =
+    public void Save()
     {
-        100, 200, 300, 400, 500, 600, 700, 800, 900,
-        1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
-    };
-
-    [ObservableProperty]
-    private GlobalOptions options = GlobalOptions.LoadOrCreate();
-
-    [ObservableProperty]
-    private bool useOpenAi;
-
-    [ObservableProperty]
-    private bool useOllama;
-
-    partial void OnUseOpenAiChanged(bool value)
-    {
-        if (value)
-        {
-            Options.SourceType = SourceType.OpenAI;
-        }
+        Options.Save();
     }
 
     partial void OnUseOllamaChanged(bool value)
@@ -47,8 +38,11 @@ public partial class ConfigDialogViewModel : ViewModelBase
         }
     }
 
-    public void Save()
+    partial void OnUseOpenAiChanged(bool value)
     {
-        Options.Save();
+        if (value)
+        {
+            Options.SourceType = SourceType.OpenAI;
+        }
     }
 }

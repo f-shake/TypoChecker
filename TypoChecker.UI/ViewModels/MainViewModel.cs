@@ -33,11 +33,6 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
-        // Options = GlobalOptions.LoadOrCreate();
-        // WeakReferenceMessenger.Default.Register(this, (object _, AppExitMessage m) =>
-        // {
-        //     Options.Save();
-        // });
         CancelCheckCommand = CheckCommand.CreateCancelCommand();
     }
 
@@ -83,6 +78,9 @@ public partial class MainViewModel : ViewModelBase
                         break;
                 }
             }
+
+            var segments = TypoCheckerCore.SegmentTypos(Input, Results);
+            WeakReferenceMessenger.Default.Send(new GenerateTypoInlinesMessage(segments));
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
