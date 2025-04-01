@@ -40,7 +40,7 @@ public class GlobalOptions
         以下是待检查内容：
         """;
 
-    public string EmptyOutput = "无错别字";
+    public string EmptyOutput = "无错误";
 
 
     public static GlobalOptions LoadOrCreate()
