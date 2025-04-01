@@ -8,6 +8,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishAot>true</PublishAot>
+    <TrimMode>partial</TrimMode>
     <ApplicationIcon>../TypoChecker.UI/Assets/icon.ico</ApplicationIcon>
   </PropertyGroup>
 

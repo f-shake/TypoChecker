@@ -81,6 +81,17 @@ public partial class MainViewModel : ViewModelBase
 
             var segments = TypoCheckerCore.SegmentTypos(Input, Results);
             WeakReferenceMessenger.Default.Send(new GenerateTypoInlinesMessage(segments));
+
+            if (Results.Count == 0)
+            {
+                await WeakReferenceMessenger.Default.Send(new CommonDialogMessage
+                {
+                    Type = CommonDialogMessage.CommonDialogType.Ok,
+                    Title = "检查完成",
+                    Message = "未检查出错误",
+                }).Task;
+                return;
+            }
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
