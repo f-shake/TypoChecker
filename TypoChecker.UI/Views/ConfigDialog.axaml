@@ -53,8 +53,24 @@
                 </c:FormItem>
             </c:StackFormItemGroup>
         </g:GroupBox>
-        <c:FormItem Label="最小分割字数：">
-            <TextBox Text="{Binding Options.MinSegmentLength}" />
+        <c:FormItem
+            Description="单个分段的字数越多，速度越快，但精度越低"
+            Label="分段字数阈值：">
+            <Grid ColumnDefinitions="*,8,48">
+                <Slider
+                    x:Name="sldMinSegLength"
+                    VerticalAlignment="Center"
+                    IsSnapToTickEnabled="True"
+                    Maximum="10000"
+                    Minimum="100"
+                    TickFrequency="100"
+                    Value="{Binding Options.MinSegmentLength}" />
+                <TextBlock
+                    Grid.Column="2"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Text="{Binding #sldMinSegLength.Value}" />
+            </Grid>
         </c:FormItem>
     </StackPanel>
 </dialog:DialogHost>
