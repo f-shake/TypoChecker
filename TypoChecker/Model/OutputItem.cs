@@ -1,12 +1,12 @@
 ﻿namespace TypoChecker.Models;
 
-public class ParseFailedItem : ICheckItem
+public class OutputItem : ICheckItem
 {
-    public ParseFailedItem()
+    public OutputItem()
     {
     }
 
-    public ParseFailedItem(string message)
+    public OutputItem(string message)
     {
         Message = message;
     }

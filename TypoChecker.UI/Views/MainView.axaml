@@ -161,9 +161,9 @@
                         Text="修正后的文本仅供参考，请勿直接复制" />
                 </Grid>
             </TabItem>
-            <TabItem Header="其他输出">
+            <TabItem Header="输出">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding OtherOutputs}">
+                    <ItemsControl ItemsSource="{Binding Outputs}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <SelectableTextBlock

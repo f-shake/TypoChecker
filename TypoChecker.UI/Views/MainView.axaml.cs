@@ -26,6 +26,7 @@ public partial class MainView : UserControl
             Dispatcher.UIThread.Invoke(() =>
             {
                 tbkResults.Inlines.Clear();
+                tbkCorrect.Inlines.Clear();
                 foreach (var seg in m.Segments)
                 {
                     var run1 = new Run(seg.Text);
