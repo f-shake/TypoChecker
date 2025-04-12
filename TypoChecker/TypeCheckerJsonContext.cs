@@ -10,14 +10,32 @@ using TypoChecker.Options;
 [JsonSerializable(typeof(OllamaResponseData))]
 [JsonSerializable(typeof(OpenAiOptions))]
 [JsonSerializable(typeof(GlobalOptions))]
-internal partial class TypeCheckerJsonContext : JsonSerializerContext
+[JsonSourceGenerationOptions(WriteIndented = true,
+    PropertyNameCaseInsensitive = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+internal partial class TypoCheckerJsonContext : JsonSerializerContext
 {
-    private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
+    private static TypoCheckerJsonContext config;
+
+    private static TypoCheckerJsonContext web;
+
+    static TypoCheckerJsonContext()
     {
-        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-    }; 
-    
-    public static TypeCheckerJsonContext Instance { get; } = new TypeCheckerJsonContext(jsonSerializerOptions);
+        web= new TypoCheckerJsonContext(new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        }); 
+        config= new TypoCheckerJsonContext(new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true
+        });
+    }
+    public static TypoCheckerJsonContext Config => config;
+    public static TypoCheckerJsonContext Web => web;
 }
