@@ -75,7 +75,7 @@
                     <DataGrid.Columns>
                         <DataGridTemplateColumn
                             Width="3*"
-                            Header="原文">
+                            Header="上下文">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel
@@ -83,10 +83,10 @@
                                         Spacing="8">
                                         <TextBlock
                                             VerticalAlignment="Center"
-                                            Text="{Binding Sentense}" />
+                                            Text="{Binding Context}" />
                                         <HyperlinkButton
                                             Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
-                                            CommandParameter="{Binding Sentense}"
+                                            CommandParameter="{Binding Context}"
                                             Content="复制" />
                                     </StackPanel>
                                 </DataTemplate>
@@ -103,10 +103,10 @@
                                         Spacing="8">
                                         <TextBlock
                                             VerticalAlignment="Center"
-                                            Text="{Binding WrongWords}" />
+                                            Text="{Binding Original}" />
                                         <HyperlinkButton
                                             Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
-                                            CommandParameter="{Binding WrongWords}"
+                                            CommandParameter="{Binding Original}"
                                             Content="复制" />
                                     </StackPanel>
                                 </DataTemplate>
@@ -123,10 +123,10 @@
                                         Spacing="8">
                                         <TextBlock
                                             VerticalAlignment="Center"
-                                            Text="{Binding CorrectWords}" />
+                                            Text="{Binding Corrected}" />
                                         <HyperlinkButton
                                             Command="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).CopyValueCommand}"
-                                            CommandParameter="{Binding CorrectWords}"
+                                            CommandParameter="{Binding Corrected}"
                                             Content="复制" />
                                     </StackPanel>
                                 </DataTemplate>
@@ -134,8 +134,8 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn
                             Width="*"
-                            Binding="{Binding Message}"
-                            Header="信息" />
+                            Binding="{Binding Explanation}"
+                            Header="解释" />
                     </DataGrid.Columns>
                 </DataGrid>
 

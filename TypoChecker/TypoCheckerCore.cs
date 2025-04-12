@@ -2,6 +2,7 @@
 using TypoChecker.Models;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 
 namespace TypoChecker;
 public class TypoCheckerCore
@@ -13,7 +14,7 @@ public class TypoCheckerCore
         typos = new List<TypoItem>();
         foreach (var t in temp)
         {
-            if (typos.Count == 0 || typos[^1].Sentense != t.Sentense)
+            if (typos.Count == 0 || typos[^1].Context != t.Context)
             {
                 typos.Add(t);
             }
@@ -39,8 +40,8 @@ public class TypoCheckerCore
 
         // 先按句子长度降序排序，优先处理更长的匹配项
         var sortedTypos = typos
-            .Where(t => !string.IsNullOrEmpty(t.Sentense))
-            .OrderByDescending(t => t.Sentense.Length)
+            .Where(t => !string.IsNullOrEmpty(t.Context))
+            .OrderByDescending(t => t.Context.Length)
             .ToList();
 
         // 记录每个字符属于哪个错误句子(null表示不属于任何错误)
@@ -52,13 +53,13 @@ public class TypoCheckerCore
             int index = 0;
             while (index < rawText.Length)
             {
-                int foundIndex = rawText.IndexOf(typo.Sentense, index, StringComparison.Ordinal);
+                int foundIndex = rawText.IndexOf(typo.Context, index, StringComparison.Ordinal);
                 if (foundIndex == -1)
                     break;
 
                 // 检查这个匹配是否完全未被标记
                 bool canMark = true;
-                for (int i = foundIndex; i < foundIndex + typo.Sentense.Length; i++)
+                for (int i = foundIndex; i < foundIndex + typo.Context.Length; i++)
                 {
                     if (charTypoMap[i] != null)
                     {
@@ -70,13 +71,13 @@ public class TypoCheckerCore
                 if (canMark)
                 {
                     // 标记这部分为当前错误
-                    for (int i = foundIndex; i < foundIndex + typo.Sentense.Length; i++)
+                    for (int i = foundIndex; i < foundIndex + typo.Context.Length; i++)
                     {
                         charTypoMap[i] = typo;
                     }
                 }
 
-                index = foundIndex + typo.Sentense.Length;
+                index = foundIndex + typo.Context.Length;
             }
         }
 
@@ -136,12 +137,11 @@ public class TypoCheckerCore
             string segment = segments[index];
             progress?.Report((double)(0 + index) / segments.Count);
 
-            string prompt = config.Prompt + segment;
-            yield return new PromptItem(prompt);
+            yield return new PromptItem(segment);
             string result = config.SourceType switch
             {
-                SourceType.OpenAI => await LlmCaller.CallOpenAI(prompt, config.OpenAiOptions),
-                SourceType.Ollama => await LlmCaller.CallOllamaApi(prompt, config.OllamaOptions),
+                SourceType.OpenAI => await LlmCaller.CallOpenAI(config.Prompt, segment, config.OpenAiOptions),
+                SourceType.Ollama => await LlmCaller.CallOllamaApi(config.Prompt, segment, config.OllamaOptions),
                 _ => throw new NotImplementedException()
             };
 
@@ -156,46 +156,59 @@ public class TypoCheckerCore
                     break;
                 }
             }
-            for (int i = startLine; i < lines.Length; i++)
+            if (startLine > 0)
             {
-                var line = lines[i];
-                if (line == config.EmptyOutput)
-                {
-                    continue;
-                }
-                ICheckItem c = null;
-                try
-                {
-                    c = Parse(line);
-                }
-                catch (FormatException)
-                {
-                }
-                if (c != null)
-                {
-                    yield return c;
-                }
+                result = string.Join(Environment.NewLine, lines[startLine..]);
+            }
+            IEnumerable<TypoItem> results = [];
+            try
+            {
+                results = Parse(result).ToList();
+            }
+            catch (FormatException ex)
+            {
+                continue;
+            }
+            foreach (var r in results)
+            {
+                yield return r;
             }
         }
     }
-    
-    private TypoItem Parse(string text)
+
+    private IEnumerable<TypoItem> Parse(string text)
     {
-        string[] parts = text.Trim().Split(['|'], StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length != 5)
+        if (!JsonNode.Parse(text).AsObject().TryGetPropertyValue("errors", out var errors))
         {
-            throw new FormatException("格式错误：" + text);
+            throw new FormatException("输出内容中找不到errors对象");
         }
-
-        return new TypoItem
+        if (errors is not JsonArray errorArray)
         {
-            Sentense = parts[0],
-            WrongWords = parts[1],
-            CorrectWords = parts[2],
-            CorrectSentense = parts[3],
-            Message = parts[4]
-        };
+            throw new FormatException("输出内容中的errors不是数组");
+        }
+        foreach (var error in errorArray)
+        {
+            if (error is not JsonObject errorObj)
+            {
+                throw new FormatException("输出内容中的errors数组元素不是对象");
+            }
+            if (!errorObj.TryGetPropertyValue("context", out var context) ||
+                !errorObj.TryGetPropertyValue("original", out var original) ||
+                !errorObj.TryGetPropertyValue("corrected", out var corrected) ||
+                !errorObj.TryGetPropertyValue("fixed_segment", out var fixedSegment) ||
+                !errorObj.TryGetPropertyValue("explanation", out var explanation))
+            {
+                throw new FormatException("输出内容中的errors对象缺少必要字段");
+            }
+            yield return new TypoItem
+            {
+                Context = context.ToString(),
+                Original = original.ToString(),
+                Corrected = corrected.ToString(),
+                FixedSegment = fixedSegment.ToString(),
+                Explanation = explanation.ToString()
+            };
+        }
     }
 
     private List<string> SplitText(string text, int minSegmentLength)

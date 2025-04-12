@@ -37,7 +37,7 @@ public partial class MainView : UserControl
                         if (seg.Typo != null)
                         {
                             run2.Foreground = Brushes.Green;
-                            run2.Text = seg.Typo.CorrectSentense;
+                            run2.Text = seg.Typo.FixedSegment;
                             //ToolTip.SetTip(run, $"{seg.Typo.Message}，建议修改为：{seg.Typo.CorrectSentense}");
                         }
                     }
